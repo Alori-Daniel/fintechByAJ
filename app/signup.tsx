@@ -7,37 +7,56 @@ import {
   KeyboardAvoidingView,
 } from "react-native";
 import React, { useState } from "react";
-import { Link } from "expo-router";
+import { Link, useRouter } from "expo-router";
 import { defaultStyles } from "@/constants/Styles";
 import Colors from "@/constants/Colors";
+import { useSignUp } from "@clerk/clerk-expo";
 
 const Page = () => {
-  const [countryCode, setCountryCode] = useState("+234");
-  const [phoneNumber, setPhoneNumber] = useState("");
+  const [password, setPassword] = useState("");
+  const [emailAddress, setEmailAddress] = useState("");
+  const router = useRouter();
+  const { signUp } = useSignUp();
 
-  const onSignup = async () => {};
+  const onSignup = async () => {
+    const email = emailAddress;
+    try {
+      await signUp!.create({
+        emailAddress: emailAddress,
+        password,
+      });
+      await signUp!.prepareEmailAddressVerification({ strategy: "email_code" });
+      router.push({
+        pathname: "/verify/[phone]",
+        params: { email: emailAddress },
+      });
+    } catch (error) {
+      console.error("Error signing up:", error);
+    }
+  };
   return (
     <KeyboardAvoidingView style={{ flex: 1 }}>
       <View style={defaultStyles.container}>
         <Text style={defaultStyles.header}>Let's get started</Text>
         <Text style={defaultStyles.descriptionText}>
-          Enter your phone number. We will send a confirmation code there
+          Enter your email address. We will send a confirmation code there
         </Text>
         <View style={styles.inputContainer}>
           <TextInput
-            style={styles.input}
-            placeholder="Mobile Number"
+            style={[styles.input]}
+            placeholder="Email Address"
             placeholderTextColor={Colors.gray}
-            keyboardType="numeric"
-            value={countryCode}
+            keyboardType="email-address"
+            value={emailAddress}
+            onChangeText={setEmailAddress}
           />
           <TextInput
-            style={[styles.input, { flex: 1 }]}
-            placeholder="Mobile Number"
+            style={styles.input}
+            placeholder="Password"
             placeholderTextColor={Colors.gray}
-            keyboardType="numeric"
-            value={phoneNumber}
-            onChangeText={setPhoneNumber}
+            keyboardType="visible-password"
+            value={password}
+            onChangeText={setPassword}
           />
         </View>
 
@@ -54,7 +73,7 @@ const Page = () => {
         <TouchableOpacity
           style={[
             defaultStyles.pillButton,
-            phoneNumber !== "" ? styles.enabled : styles.disabled,
+            emailAddress !== "" ? styles.enabled : styles.disabled,
             { marginBottom: 20 },
           ]}
           onPress={onSignup}
@@ -69,7 +88,8 @@ const Page = () => {
 const styles = StyleSheet.create({
   inputContainer: {
     marginVertical: 40,
-    flexDirection: "row",
+    flexDirection: "column",
+    gap: 5,
   },
   input: {
     backgroundColor: Colors.lightGray,
